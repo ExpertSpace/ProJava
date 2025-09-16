@@ -1,13 +1,10 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Shortcut Doctor USB - Восстановление USB накопителей</title>
-    
-    <!-- Counter API -->
-    <script src="https://api.countapi.xyz/hit/shortcut-doctor-usb/views" async></script>
-    
+
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -22,11 +19,7 @@
             --shadow: 0 8px 32px rgba(44, 62, 80, 0.1);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -41,10 +34,9 @@
             max-width: 1000px;
             margin: 0 auto;
             background: var(--card-bg);
-            border-radius:20px;
+            border-radius: 20px;
             overflow: hidden;
             box-shadow: var(--shadow);
-            
         }
 
         .header {
@@ -55,32 +47,58 @@
             position: relative;
         }
 
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
         .logo {
-            font-size: 4rem;
-            margin: 0px;
-            animation: pulse 2s infinite;
+            width: 96px;
+            height: 96px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            overflow: hidden;
+            transform-origin: center;
+            will-change: transform;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            -webkit-transform: translateZ(0);
+            animation: pulse 2000ms infinite;
+            background: transparent;
+        }
+
+        .logo img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+            background: transparent;
         }
 
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+            50% { transform: scale(1.08); }
         }
 
-        .app-title {
+        .logo-text {
             font-size: 2.5rem;
-            font-weight: 300;
-            margin-bottom: 10px;
+            font-weight: bold;
+            background: linear-gradient(45deg, var(--secondary-color), var(--success-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .app-subtitle {
-            font-size: 1.2rem;
-            opacity: 0.9;
-            font-weight: 300;
-        }
+        .app-title { font-size: 2.2rem; font-weight: 300; margin-top: 6px; }
+        .app-subtitle { font-size: 1.05rem; opacity: 0.95; font-weight: 300; margin-top: 6px; }
 
-        .content {
-            padding: 40px;
-        }
+        .content { padding: 40px; }
 
         .download-options {
             display: grid;
@@ -98,13 +116,8 @@
             transition: transform 0.3s ease;
         }
 
-        .download-card.exe {
-            border-left-color: var(--secondary-color);
-        }
-
-        .download-card:hover {
-            transform: translateY(-5px);
-        }
+        .download-card.exe { border-left-color: var(--secondary-color); }
+        .download-card:hover { transform: translateY(-5px); }
 
         .download-btn {
             display: inline-flex;
@@ -127,15 +140,6 @@
             box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
         }
 
-        .download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
-        }
-
-        .download-btn.exe:hover {
-            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
-        }
-
         .file-info {
             background: rgba(0, 0, 0, 0.05);
             padding: 12px;
@@ -143,179 +147,56 @@
             margin: 10px 0;
             font-family: 'Courier New', monospace;
             font-size: 0.85rem;
-        }
-
-        .hash-value {
-            color: var(--primary-color);
-            font-weight: bold;
             word-break: break-all;
         }
 
-        .version {
-            display: block;
-            margin-top: 5px;
-            font-size: 0.9rem;
-            color: #7f8c8d;
-        }
+        .hash-value { color: var(--primary-color); font-weight: bold; word-break: break-all; }
+        .version { display: block; margin-top: 5px; font-size: 0.9rem; color: #7f8c8d; }
 
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin: 40px 0;
-        }
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 40px 0; }
+        .feature-card { background: var(--light-bg); padding: 25px; border-radius: 12px; text-align: center; transition: transform 0.3s ease; }
+        .feature-card:hover { transform: translateY(-5px); }
+        .feature-icon { font-size: 2.5rem; margin-bottom: 15px; color: var(--secondary-color); }
 
-        .feature-card {
-            background: var(--light-bg);
-            padding: 25px;
-            border-radius: 12px;
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
+        .instructions { background: var(--primary-color); color: var(--light-text); padding: 40px; border-radius: 15px; margin: 40px 0; }
+        .steps { display: grid; gap: 20px; margin-top: 20px; }
+        .step { display: flex; align-items: flex-start; gap: 15px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px; }
+        .step-number { background: var(--secondary-color); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
 
-        .feature-card:hover {
-            transform: translateY(-5px);
-        }
+        .requirements { background: var(--warning-color); color: white; padding: 25px; border-radius: 12px; margin: 30px 0; }
 
-        .feature-icon {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-            color: var(--secondary-color);
-        }
+        .footer { background: var(--primary-color); color: var(--light-text); text-align: center; padding: 30px; margin-top: 40px; }
 
-        .instructions {
-            background: var(--primary-color);
-            color: var(--light-text);
-            padding: 40px;
-            border-radius: 15px;
-            margin: 40px 0;
-        }
+        .warning { background: var(--accent-color); color: white; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; }
 
-        .steps {
-            display: grid;
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .step {
-            display: flex;
-            align-items: flex-start;
-            gap: 15px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-        }
-
-        .step-number {
-            background: var(--secondary-color);
-            color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-
-        .requirements {
-            background: var(--warning-color);
-            color: white;
-            padding: 25px;
-            border-radius: 12px;
-            margin: 30px 0;
-        }
-
-        .footer {
-            background: var(--primary-color);
-            color: var(--light-text);
-            text-align: center;
-            padding: 30px;
-            margin-top: 40px;
-        }
-
-        .warning {
-            background: var(--accent-color);
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        .stats {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin: 20px 0;
-            font-size: 0.9rem;
-            color: #7f8c8d;
-        }
-
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .stats { display: flex; justify-content: center; gap: 30px; margin: 20px 0; font-size: 0.9rem; color: #7f8c8d; }
+        .stat-item { display: flex; align-items: center; gap: 8px; }
 
         @media (max-width: 768px) {
-            .header {
-                padding: 30px 20px;
-            }
-            
-            .app-title {
-                font-size: 2rem;
-            }
-            
-            .content {
-                padding: 20px;
-            }
-            
-            .download-options {
-                grid-template-columns: 1fr;
-            }
-            
-            .stats {
-                flex-direction: column;
-                gap: 10px;
-            }
+            .header { padding: 30px 20px; }
+            .app-title { font-size: 2rem; }
+            .content { padding: 20px; }
+            .download-options { grid-template-columns: 1fr; }
+            .stats { flex-direction: column; gap: 10px; }
         }
 
-        .logo-container {
+        .contacts {
             display: flex;
-            justify-content: center;
+            gap: 12px;
             align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
+            justify-content: center;
+            margin-top: 12px;
         }
-
-        .logo-text {
-            font-size: 2.5rem;
-            font-weight: bold;
-            background: linear-gradient(45deg, var(--secondary-color), var(--success-color));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .contact-link {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            color: var(--light-text);
+            text-decoration: none;
+            font-weight: 500;
+            opacity: 0.95;
         }
-        
-        .logo img {
-            width: 1em;
-            padding-top: 25px;
-        }
-
-        .checksum-section {
-            background: var(--light-bg);
-            padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
-        }
-
-        .checksum-title {
-            text-align: center;
-            margin-bottom: 15px;
-            color: var(--primary-color);
-        }
+        .contact-link svg { width: 18px; height: 18px; }
     </style>
 </head>
 <body>
@@ -323,233 +204,131 @@
         <div class="header">
             <div class="logo-container">
                 <div class="logo"><img src="icon512.svg" alt="Shortcut Doctor USB"></div>
-                <div class="logo-text">Shortcut Doctor</div>
+                <div>
+                    <div class="logo-text">Shortcut Doctor</div>
+                    <div class="app-title">ShortcutDoctorUSB</div>
+                    <div class="app-subtitle">Профессиональное восстановление USB-накопителей</div>
+                </div>
             </div>
-            <h1 class="app-title">ShortcutDoctorUSB</h1>
-            <p class="app-subtitle">Профессиональное восстановление USB-накопителей</p>
         </div>
 
         <div class="content">
             <div class="download-options">
                 <div class="download-card">
                     <h3>🪙 JAR версия (требует Java)</h3>
-                    <p>Кроссплатформенная версия для всех ОС</p>
-                    <a href="ShortcutDoctorUSB.jar" download class="download-btn" id="downloadJar">
-                        <span>⬇️</span>
-                        Скачать JAR
-                    </a>
-                    <span class="version">Версия 1.0 | 2.3 MB</span>
-                    
-                    <div class="file-info">
-                        <strong>SHA-256:</strong><br>
-                        <span class="hash-value" id="jarHash">a1b2c3d4e5f67890... (вычисляется)</span>
-                    </div>
+                    <a href="ShortcutDoctorUSB.jar" download class="download-btn" id="downloadJar">⬇️ Скачать JAR</a>
+                    <span class="version">Версия 1.0 | <span id="jarSize">—</span></span>
+                    <div class="file-info"><strong>SHA-256:</strong><br><span class="hash-value" id="jarHash">—</span></div>
                 </div>
-
                 <div class="download-card exe">
                     <h3>🪟 EXE версия (Windows)</h3>
-                    <p>Нативная версия без зависимости от Java</p>
-                    <a href="ShortcutDoctorUSB.exe" download class="download-btn exe" id="downloadExe">
-                        <span>⬇️</span>
-                        Скачать EXE
-                    </a>
-                    <span class="version">Версия 1.0 | 15.2 MB</span>
-                    
-                    <div class="file-info">
-                        <strong>SHA-256:</strong><br>
-                        <span class="hash-value" id="exeHash">a1b2c3d4e5f67890... (вычисляется)</span>
-                    </div>
+                    <a href="ShortcutDoctorUSB.exe" download class="download-btn exe" id="downloadExe">⬇️ Скачать EXE</a>
+                    <span class="version">Версия 1.0 | <span id="exeSize">—</span></span>
+                    <div class="file-info"><strong>SHA-256:</strong><br><span class="hash-value" id="exeHash">—</span></div>
                 </div>
             </div>
 
             <div class="stats">
-                <div class="stat-item">
-                    <span>👁️ Просмотров:</span>
-                    <span id="viewCount">0</span>
-                </div>
-                <div class="stat-item">
-                    <span>📥 Скачиваний (JAR):</span>
-                    <span id="downloadJarCount">0</span>
-                </div>
-                <div class="stat-item">
-                    <span>📥 Скачиваний (EXE):</span>
-                    <span id="downloadExeCount">0</span>
-                </div>
+                <div class="stat-item">👁️ Просмотров: <span id="viewCount">0</span></div>
+                <div class="stat-item">📥 JAR: <span id="downloadJarCount">0</span></div>
+                <div class="stat-item">📥 EXE: <span id="downloadExeCount">0</span></div>
             </div>
 
-            <div class="checksum-section">
-                <h3 class="checksum-title">🔒 Проверка целостности файлов</h3>
-                <p>Для проверки хэша скачанного файла используйте команды:</p>
-                
-                <div class="file-info">
-                    <strong>Windows (PowerShell):</strong><br>
-                    <code>Get-FileHash ShortcutDoctorUSB.exe -Algorithm SHA256</code>
-                </div>
-                
-                <div class="file-info">
-                    <strong>Linux/Mac:</strong><br>
-                    <code>sha256sum ShortcutDoctorUSB.jar</code>
-                </div>
-                
-                <div class="file-info">
-                    <strong>Проверка подписи (если есть):</strong><br>
-                    <code>Right-click → Properties → Digital Signatures</code>
-                </div>
-            </div>
-
-            <div class="warning">
-                ⚠️ Перед использованием закройте все открытые файлы на USB-накопителе
-            </div>
+            <div class="warning">⚠️ Перед использованием закройте все открытые файлы на USB-накопителе</div>
 
             <div class="features">
-                <div class="feature-card">
-                    <div class="feature-icon">🔍</div>
-                    <h3>Глубокое сканирование</h3>
-                    <p>Обнаружение всех скрытых и системных файлов</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">🛡️</div>
-                    <h3>Защита данных</h3>
-                    <p>Безопасное восстановление без потери файлов</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
-                    <h3>Быстрая работа</h3>
-                    <p>Оптимизированный алгоритм обработки</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <h3>Детальная статистика</h3>
-                    <p>Полные отчеты о проделанной работе</p>
-                </div>
+                <div class="feature-card"><div class="feature-icon">🔍</div><h3>Глубокое сканирование</h3><p>Обнаружение всех скрытых и системных файлов</p></div>
+                <div class="feature-card"><div class="feature-icon">🛡️</div><h3>Защита данных</h3><p>Безопасное восстановление без потери файлов</p></div>
+                <div class="feature-card"><div class="feature-icon">⚡</div><h3>Быстрая работа</h3><p>Оптимизированный алгоритм обработки</p></div>
+                <div class="feature-card"><div class="feature-icon">📊</div><h3>Детальная статистика</h3><p>Полные отчеты о проделанной работе</p></div>
             </div>
 
             <div class="instructions">
                 <h2>🎯 Как использовать программу</h2>
                 <div class="steps">
-                    <div class="step">
-                        <div class="step-number">1</div>
-                        <div>Скачайте подходящую версию (JAR или EXE)</div>
-                    </div>
-                    <div class="step">
-                        <div class="step-number">2</div>
-                        <div>Подключите USB-накопитель к компьютеру</div>
-                    </div>
-                    <div class="step">
-                        <div class="step-number">3</div>
-                        <div>Запустите программу (EXE - двойной клик, JAR - через Java)</div>
-                    </div>
-                    <div class="step">
-                        <div class="step-number">4</div>
-                        <div>Выберите нужный диск в выпадающем списке</div>
-                    </div>
-                    <div class="step">
-                        <div class="step-number">5</div>
-                        <div>Нажмите кнопку <strong>"Исправить ярлыки"</strong></div>
-                    </div>
+                    <div class="step"><div class="step-number">1</div><div>Скачайте подходящую версию (JAR или EXE)</div></div>
+                    <div class="step"><div class="step-number">2</div><div>Подключите USB-накопитель к компьютеру</div></div>
+                    <div class="step"><div class="step-number">3</div><div>Запустите программу</div></div>
+                    <div class="step"><div class="step-number">4</div><div>Выберите нужный диск в списке</div></div>
+                    <div class="step"><div class="step-number">5</div><div>Нажмите кнопку <strong>"Исправить ярлыки"</strong></div></div>
                 </div>
             </div>
 
             <div class="requirements">
                 <h3>📋 Системные требования</h3>
                 <ul>
-                    <li>✅ <strong>JAR версия:</strong> Java Runtime Environment 17+</li>
+                    <li>✅ <strong>JAR версия:</strong> Java 17+</li>
                     <li>✅ <strong>EXE версия:</strong> Windows 7/8/10/11 (x64)</li>
-                    <li>✅ 50 MB свободного места на диске</li>
-                    <li>✅ USB-накопитель для восстановления</li>
+                    <li>✅ 50 MB свободного места</li>
                 </ul>
-            </div>
-
-            <div style="text-align: center; margin: 30px 0;">
-                <h3>❓ Нет Java?</h3>
-                <p>Скачайте и установите Java с официального сайта:</p>
-                <a href="https://java.com/ru/download/" style="color: var(--secondary-color); font-weight: bold;">
-                    https://java.com/ru/download/
-                </a>
             </div>
         </div>
 
         <div class="footer">
-            <p>© 2024 Shortcut Doctor USB | Профессиональный инструмент для восстановления</p>
-            <p>Без вирусов | Без рекламы | Бесплатно</p>
+            <p>© 2024 Shortcut Doctor USB</p>
+            <div class="contacts">
+                <a class="contact-link" href="https://t.me/Minmaxminor" target="_blank">
+                    <svg viewBox="0 0 240 240"><path fill="#fff" d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm52.9 80.1l-22 103.5c-1.7 7.5-6.1 9.5-12.4 6.1l-34.4-25.6-16.6 16c-1.8 1.8-3.3 3.3-6.6 3.3l2.4-34.2 62.2-56.2c2.7-2.4-0.6-3.8-4.1-1.4L69.2 127.6 28.5 115.6c-7-2.2-7.1-7-1.5-10.4L171.3 63.9c6.3-2.8 11.6 1.6 9.6 16.2z"/></svg>
+                    <span>@Minmaxminor</span>
+                </a>
+                <a class="contact-link" href="mailto:minmaxminor@ya.ru?subject=Обратная%20связь%20по%20ShortcutDoctorUSB&body=Здравствуйте,%20у%20меня%20вопрос%20по%20программе...">
+                    <svg viewBox="0 0 24 24"><path fill="#fff" d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5L4 8V6l8 5 8-5v2z"/></svg>
+                    <span>minmaxminor@ya.ru</span>
+                </a>
+            </div>
         </div>
     </div>
 
-    <script>
-        // Хэши файлов (замените на реальные после сборки)
-        const FILE_HASHES = {
-            jar: "a1b2c3d4e5f678901234567890abcdef1234567890abcdef1234567890abcdef",
-            exe: "fedcba0987654321abcdef0123456789abcdef0123456789abcdef0123456789"
-        };
+<script>
+function bytesToHuman(bytes) {
+    if (!bytes) return '—';
+    const sizes = ['B','KB','MB','GB','TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 2)} ${sizes[i]}`;
+}
 
-        // Счетчики скачиваний
-        async function updateDownloadCount(type) {
-            try {
-                const response = await fetch(`https://api.countapi.xyz/hit/shortcut-doctor-usb/downloads-${type}`);
-                const data = await response.json();
-                document.getElementById(`download${type.toUpperCase()}Count`).textContent = data.value.toLocaleString();
-            } catch (error) {
-                console.log('Не удалось обновить счетчик скачиваний');
-            }
+async function loadHashes() {
+    try {
+        const resp = await fetch("hashes.json");
+        if (!resp.ok) throw new Error("Не удалось загрузить hashes.json");
+        const data = await resp.json();
+        const jar = data["ShortcutDoctorUSB.jar"];
+        const exe = data["ShortcutDoctorUSB.exe"];
+        if (jar) {
+            document.getElementById("jarSize").textContent = bytesToHuman(jar.size);
+            document.getElementById("jarHash").textContent = jar.sha256 || "—";
         }
-        
-        // Получение текущих значений счетчиков
-        async function loadCounters() {
-            try {
-                // Загрузка счетчика просмотров
-                const viewsResponse = await fetch('https://api.countapi.xyz/get/shortcut-doctor-usb/views');
-                const viewsData = await viewsResponse.json();
-                document.getElementById('viewCount').textContent = viewsData.value.toLocaleString();
-                
-                // Загрузка счетчиков скачиваний
-                const jarResponse = await fetch('https://api.countapi.xyz/get/shortcut-doctor-usb/downloads-jar');
-                const jarData = await jarResponse.json();
-                document.getElementById('downloadJarCount').textContent = jarData.value.toLocaleString();
-                
-                const exeResponse = await fetch('https://api.countapi.xyz/get/shortcut-doctor-usb/downloads-exe');
-                const exeData = await exeResponse.json();
-                document.getElementById('downloadExeCount').textContent = exeData.value.toLocaleString();
-                
-            } catch (error) {
-                console.log('Не удалось загрузить счетчики');
-            }
+        if (exe) {
+            document.getElementById("exeSize").textContent = bytesToHuman(exe.size);
+            document.getElementById("exeHash").textContent = exe.sha256 || "—";
         }
-        
-        // Отображение хэшей
-        function displayHashes() {
-            document.getElementById('jarHash').textContent = FILE_HASHES.jar;
-            document.getElementById('exeHash').textContent = FILE_HASHES.exe;
-        }
-        
-        // Обработка кликов по кнопкам скачивания
-        document.getElementById('downloadJar').addEventListener('click', function() {
-            setTimeout(() => updateDownloadCount('jar'), 100);
-        });
-        
-        document.getElementById('downloadExe').addEventListener('click', function() {
-            setTimeout(() => updateDownloadCount('exe'), 100);
-        });
-        
-        // Загрузка при старте
-        document.addEventListener('DOMContentLoaded', function() {
-            loadCounters();
-            displayHashes();
-            
-            // Анимация элементов
-            const elements = document.querySelectorAll('.feature-card, .download-card');
-            elements.forEach((el, index) => {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(20px)';
-                setTimeout(() => {
-                    el.style.transition = 'all 0.5s ease';
-                    el.style.opacity = '1';
-                    el.style.transform = 'translateY(0)';
-                }, index * 100);
-            });
-        });
-    </script>
+    } catch(e) { console.error(e); }
+}
+
+const NAMESPACE = "shortcut-doctor-usb";
+async function hitCounter(key, elId) {
+    try {
+        const r = await fetch(`https://api.countapi.xyz/hit/${NAMESPACE}/${key}`);
+        const d = await r.json();
+        document.getElementById(elId).textContent = d.value;
+    } catch {}
+}
+async function getCounter(key, elId) {
+    try {
+        const r = await fetch(`https://api.countapi.xyz/get/${NAMESPACE}/${key}`);
+        const d = await r.json();
+        document.getElementById(elId).textContent = d.value ?? 0;
+    } catch {}
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadHashes();
+    hitCounter("views","viewCount");
+    getCounter("downloads-jar","downloadJarCount");
+    getCounter("downloads-exe","downloadExeCount");
+    document.getElementById("downloadJar").addEventListener("click", ()=> hitCounter("downloads-jar","downloadJarCount"));
+    document.getElementById("downloadExe").addEventListener("click", ()=> hitCounter("downloads-exe","downloadExeCount"));
+});
+</script>
 </body>
 </html>
