@@ -44,7 +44,6 @@
             color: var(--light-text);
             padding: 40px;
             text-align: center;
-            position: relative;
         }
 
         .logo-container {
@@ -92,7 +91,6 @@
             background: linear-gradient(45deg, var(--secondary-color), var(--success-color));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
 
         .app-title { font-size: 2.2rem; font-weight: 300; margin-top: 6px; }
@@ -215,15 +213,15 @@
         <div class="content">
             <div class="download-options">
                 <div class="download-card">
-                    <h3>🪙 JAR версия (требует Java)</h3>
+                    <h3><img src="java-logo.png" alt="Java" style="height: 1.2em; vertical-align: middle;"> JAR версия (требует Java)</h3>
                     <a href="ShortcutDoctorUSB.jar" download class="download-btn" id="downloadJar">⬇️ Скачать JAR</a>
-                    <span class="version">Версия 1.0 | <span id="jarSize">—</span></span>
+                    <span class="version">Версия <span id="jarVersion">—</span> | <span id="jarSize">—</span></span>
                     <div class="file-info"><strong>SHA-256:</strong><br><span class="hash-value" id="jarHash">—</span></div>
                 </div>
                 <div class="download-card exe">
                     <h3>🪟 EXE версия (Windows)</h3>
                     <a href="ShortcutDoctorUSB.exe" download class="download-btn exe" id="downloadExe">⬇️ Скачать EXE</a>
-                    <span class="version">Версия 1.0 | <span id="exeSize">—</span></span>
+                    <span class="version">Версия <span id="exeVersion">—</span> | <span id="exeSize">—</span></span>
                     <div class="file-info"><strong>SHA-256:</strong><br><span class="hash-value" id="exeHash">—</span></div>
                 </div>
             </div>
@@ -271,7 +269,7 @@
                     <svg viewBox="0 0 240 240"><path fill="#fff" d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm52.9 80.1l-22 103.5c-1.7 7.5-6.1 9.5-12.4 6.1l-34.4-25.6-16.6 16c-1.8 1.8-3.3 3.3-6.6 3.3l2.4-34.2 62.2-56.2c2.7-2.4-0.6-3.8-4.1-1.4L69.2 127.6 28.5 115.6c-7-2.2-7.1-7-1.5-10.4L171.3 63.9c6.3-2.8 11.6 1.6 9.6 16.2z"/></svg>
                     <span>@Minmaxminor</span>
                 </a>
-                <a class="contact-link" href="mailto:minmaxminor@ya.ru?subject=Обратная%20связь%20по%20ShortcutDoctorUSB&body=Здравствуйте,%20у%20меня%20вопрос%20по%20программе...">
+                <a class="contact-link" href="mailto:minmaxminor@ya.ru?subject=Обратная%20связь%20по%20ShortcutDoctorUSB&body=Здравствуйте,%0D%0A%0D%0AОт%3A%20%5Bваш%20email%5D%0D%0A%0D%0A%3CОпишите%20вашу%20проблему%20здесь%3E">
                     <svg viewBox="0 0 24 24"><path fill="#fff" d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5L4 8V6l8 5 8-5v2z"/></svg>
                     <span>minmaxminor@ya.ru</span>
                 </a>
@@ -297,10 +295,12 @@ async function loadHashes() {
         if (jar) {
             document.getElementById("jarSize").textContent = bytesToHuman(jar.size);
             document.getElementById("jarHash").textContent = jar.sha256 || "—";
+            document.getElementById("jarVersion").textContent = jar.version || "—";
         }
         if (exe) {
             document.getElementById("exeSize").textContent = bytesToHuman(exe.size);
             document.getElementById("exeHash").textContent = exe.sha256 || "—";
+            document.getElementById("exeVersion").textContent = exe.version || "—";
         }
     } catch(e) { console.error(e); }
 }
