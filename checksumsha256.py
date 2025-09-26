@@ -17,7 +17,7 @@ except Exception:
 
 FILES = [
     "ShortcutDoctorUSB.jar",
-    "ShortcutDoctorUSB.exe"
+    "ShortcutDoctorUSB-1.0.0.exe"
 ]
 
 def sha256sum(filename, block_size=1 << 16):
