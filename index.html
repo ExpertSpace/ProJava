@@ -5,6 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Shortcut Doctor USB - Восстановление USB накопителей</title>
 
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript" >
+        (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+        (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+        ym(104223851, "init", {
+            clickmap:true,
+            trackLinks:true,
+            accurateTrackBounce:true,
+            webvisor:true
+        });
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/104223851" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
+
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -321,29 +339,29 @@ async function getCounter(key, elId) {
     } catch {}
 }
 
+// Отслеживание скачиваний в Яндекс.Метрике
+function trackDownload(type) {
+    if (typeof ym !== 'undefined') {
+        ym(104223851, 'reachGoal', 'DOWNLOAD_' + type.toUpperCase());
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     loadHashes();
     hitCounter("views","viewCount");
     getCounter("downloads-jar","downloadJarCount");
     getCounter("downloads-exe","downloadExeCount");
-    document.getElementById("downloadJar").addEventListener("click", ()=> hitCounter("downloads-jar","downloadJarCount"));
-    document.getElementById("downloadExe").addEventListener("click", ()=> hitCounter("downloads-exe","downloadExeCount"));
+    
+    document.getElementById("downloadJar").addEventListener("click", () => {
+        hitCounter("downloads-jar","downloadJarCount");
+        trackDownload('jar');
+    });
+    document.getElementById("downloadExe").addEventListener("click", () => {
+        hitCounter("downloads-exe","downloadExeCount");
+        trackDownload('exe');
+    });
 });
 </script>
-
-<!-- Yandex.Metrika counter -->
-<script type="text/javascript">
-    (function(m,e,t,r,i,k,a){
-        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-        m[i].l=1*new Date();
-        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=104223851', 'ym');
-
-    ym(104223851, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", accurateTrackBounce:true, trackLinks:true});
-</script>
-<noscript><div><img src="https://mc.yandex.ru/watch/104223851" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
-<!-- /Yandex.Metrika counter -->
 
 </body>
 </html>
