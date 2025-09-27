@@ -278,144 +278,182 @@
     </div>
 
 
-    
-<script>
-// Конфигурация счетчиков
-const COUNTER_CONFIG = {
-    namespace: "shortcut-doctor-usb-v2", // Новый namespace чтобы избежать конфликтов
-    keys: {
-        views: "total-views",
-        jarDownloads: "downloads-jar", 
-        exeDownloads: "downloads-exe"
-    }
-};
 
-// Функция для форматирования чисел (1000 -> 1K)
-function formatNumber(num) {
-    if (num >= 1000000) {
-        return (num / 1000000).toFixed(1) + 'M';
-    }
-    if (num >= 1000) {
-        return (num / 1000).toFixed(1) + 'K';
-    }
+<script type="module">
+  // Firebase импорты
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+  import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
+  import { getFirestore, doc, setDoc, increment, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
+  // Firebase конфигурация
+  const firebaseConfig = {
+    apiKey: "AIzaSyCOA7mkCs8VbEmvcf457iHI_5RyZp8Bb7U",
+    authDomain: "my-web-counters-shortcutdoctor.firebaseapp.com",
+    projectId: "my-web-counters-shortcutdoctor",
+    storageBucket: "my-web-counters-shortcutdoctor.firebasestorage.app",
+    messagingSenderId: "762641699109",
+    appId: "1:762641699109:web:23c2affa6def3181888acc",
+    measurementId: "G-77X98KEZ27"
+  };
+
+  // Инициализация Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const db = getFirestore(app);
+
+  // Конфигурация счетчиков
+  const COUNTER_CONFIG = {
+    namespace: "shortcut-doctor-usb",
+    docId: "download-counters"
+  };
+
+  // Функция для форматирования чисел
+  function formatNumber(num) {
+    if (!num && num !== 0) return '—';
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
     return num.toString();
-}
+  }
 
-// Основная функция работы со счетчиками
-async function updateCounter(key, elementId, isHit = false) {
+  // Функция для обновления счетчика в Firestore
+  async function updateFirebaseCounter(counterName, elementId, isIncrement = false) {
     try {
-        const endpoint = isHit ? 'hit' : 'get';
-        const url = `https://api.countapi.xyz/${endpoint}/${COUNTER_CONFIG.namespace}/${key}`;
+      const counterRef = doc(db, 'counters', COUNTER_CONFIG.docId);
+      
+      if (isIncrement) {
+        // Увеличиваем счетчик
+        await setDoc(counterRef, {
+          [counterName]: increment(1),
+          lastUpdated: new Date()
+        }, { merge: true });
         
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        // Логируем событие в Analytics
+        logEvent(analytics, counterName === 'views' ? 'page_view' : 'download', {
+          file_type: counterName,
+          page_title: document.title
+        });
+      }
+      
+      // Подписываемся на обновления в реальном времени
+      onSnapshot(counterRef, (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          const value = data[counterName] || 0;
+          const element = document.getElementById(elementId);
+          if (element) {
+            element.textContent = formatNumber(value);
+          }
         }
-        
-        const data = await response.json();
-        
-        if (data && typeof data.value === 'number') {
-            const element = document.getElementById(elementId);
-            if (element) {
-                element.textContent = formatNumber(data.value);
-            }
-            return data.value;
-        }
+      });
+      
     } catch (error) {
-        console.warn('Counter error:', error);
-        // Показываем прочерк если счетчик недоступен
-        const element = document.getElementById(elementId);
-        if (element) {
-            element.textContent = '—';
-        }
+      console.warn('Firebase counter error:', error);
+      fallbackToCountAPI(counterName, elementId, isIncrement);
     }
-    return 0;
-}
+  }
 
-// Функция для bytesToHuman (оставляем вашу)
-function bytesToHuman(bytes) {
+  // Fallback на countapi.xyz если Firebase недоступен
+  async function fallbackToCountAPI(key, elementId, isHit = false) {
+    try {
+      const endpoint = isHit ? 'hit' : 'get';
+      const url = `https://api.countapi.xyz/${endpoint}/${COUNTER_CONFIG.namespace}/${key}`;
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        const element = document.getElementById(elementId);
+        if (element && data.value) {
+          element.textContent = formatNumber(data.value);
+        }
+      }
+    } catch (error) {
+      console.warn('CountAPI also failed:', error);
+      const element = document.getElementById(elementId);
+      if (element) element.textContent = '—';
+    }
+  }
+
+  // Функция для bytesToHuman (оставляем вашу)
+  function bytesToHuman(bytes) {
     if (!bytes) return '—';
     const sizes = ['B','KB','MB','GB','TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 2)} ${sizes[i]}`;
-}
+  }
 
-// Функция для загрузки hashes.json (оставляем вашу)
-async function loadHashes() {
+  // Функция для загрузки hashes.json (оставляем вашу)
+  async function loadHashes() {
     try {
-        const resp = await fetch("hashes.json");
-        if (!resp.ok) throw new Error("Не удалось загрузить hashes.json");
-        const data = await resp.json();
-        const jar = data["ShortcutDoctorUSB.jar"];
-        const exe = data["ShortcutDoctorUSB.exe"];
-        if (jar) {
-            document.getElementById("jarSize").textContent = bytesToHuman(jar.size);
-            document.getElementById("jarHash").textContent = jar.sha256 || "—";
-            document.getElementById("jarVersion").textContent = jar.version || "—";
-        }
-        if (exe) {
-            document.getElementById("exeSize").textContent = bytesToHuman(exe.size);
-            document.getElementById("exeHash").textContent = exe.sha256 || "—";
-            document.getElementById("exeVersion").textContent = exe.version || "—";
-        }
+      const resp = await fetch("hashes.json");
+      if (!resp.ok) throw new Error("Не удалось загрузить hashes.json");
+      const data = await resp.json();
+      const jar = data["ShortcutDoctorUSB.jar"];
+      const exe = data["ShortcutDoctorUSB.exe"];
+      if (jar) {
+        document.getElementById("jarSize").textContent = bytesToHuman(jar.size);
+        document.getElementById("jarHash").textContent = jar.sha256 || "—";
+        document.getElementById("jarVersion").textContent = jar.version || "—";
+      }
+      if (exe) {
+        document.getElementById("exeSize").textContent = bytesToHuman(exe.size);
+        document.getElementById("exeHash").textContent = exe.sha256 || "—";
+        document.getElementById("exeVersion").textContent = exe.version || "—";
+      }
     } catch(e) { 
-        console.error('Error loading hashes:', e); 
+      console.error('Error loading hashes:', e); 
     }
-}
+  }
 
-// Инициализация счетчиков при загрузке страницы
-async function initializeCounters() {
-    // Загружаем информацию о файлах
+  // Инициализация счетчиков
+  async function initializeCounters() {
     await loadHashes();
     
-    // Обновляем счетчики (только чтение)
-    await updateCounter(COUNTER_CONFIG.keys.views, 'viewCount', false);
-    await updateCounter(COUNTER_CONFIG.keys.jarDownloads, 'downloadJarCount', false);
-    await updateCounter(COUNTER_CONFIG.keys.exeDownloads, 'downloadExeCount', false);
+    // Загружаем текущие значения счетчиков
+    await updateFirebaseCounter('views', 'viewCount', false);
+    await updateFirebaseCounter('jarDownloads', 'downloadJarCount', false);
+    await updateFirebaseCounter('exeDownloads', 'downloadExeCount', false);
     
     // Увеличиваем счетчик просмотров (один раз за сессию)
     if (!sessionStorage.getItem('viewCounted')) {
-        await updateCounter(COUNTER_CONFIG.keys.views, 'viewCount', true);
-        sessionStorage.setItem('viewCounted', 'true');
+      await updateFirebaseCounter('views', 'viewCount', true);
+      sessionStorage.setItem('viewCounted', 'true');
+      
+      // Логируем просмотр страницы в Analytics
+      logEvent(analytics, 'page_view', {
+        page_title: document.title,
+        page_location: window.location.href
+      });
     }
-}
+  }
 
-// Обработчики для кнопок скачивания
-function setupDownloadHandlers() {
+  // Обработчики скачивания
+  function setupDownloadHandlers() {
     const jarLink = document.getElementById('downloadJar');
     const exeLink = document.getElementById('downloadExe');
     
     if (jarLink) {
-        jarLink.addEventListener('click', async function(e) {
-            // Даем время на начало скачивания перед обновлением счетчика
-            setTimeout(async () => {
-                await updateCounter(COUNTER_CONFIG.keys.jarDownloads, 'downloadJarCount', true);
-            }, 100);
-        });
+      jarLink.addEventListener('click', async function(e) {
+        setTimeout(async () => {
+          await updateFirebaseCounter('jarDownloads', 'downloadJarCount', true);
+        }, 100);
+      });
     }
     
     if (exeLink) {
-        exeLink.addEventListener('click', async function(e) {
-            setTimeout(async () => {
-                await updateCounter(COUNTER_CONFIG.keys.exeDownloads, 'downloadExeCount', true);
-            }, 100);
-        });
+      exeLink.addEventListener('click', async function(e) {
+        setTimeout(async () => {
+          await updateFirebaseCounter('exeDownloads', 'downloadExeCount', true);
+        }, 100);
+      });
     }
-}
+  }
 
-// Запуск при полной загрузке DOM
-document.addEventListener('DOMContentLoaded', function() {
+  // Запуск при загрузке DOM
+  document.addEventListener('DOMContentLoaded', function() {
     initializeCounters();
     setupDownloadHandlers();
-});
+  });
 
-// Дополнительно: обновляем счетчики каждые 30 секунд для актуальности
-setInterval(() => {
-    updateCounter(COUNTER_CONFIG.keys.views, 'viewCount', false);
-    updateCounter(COUNTER_CONFIG.keys.jarDownloads, 'downloadJarCount', false);
-    updateCounter(COUNTER_CONFIG.keys.exeDownloads, 'downloadExeCount', false);
-}, 30000);
 </script>
 
 
