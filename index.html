@@ -315,42 +315,49 @@
     return num.toString();
   }
 
-  // Функция для обновления счетчика в Firestore
-  async function updateFirebaseCounter(counterName, elementId, isIncrement = false) {
-    try {
-      const counterRef = doc(db, 'counters', COUNTER_CONFIG.docId);
-      
-      if (isIncrement) {
-        // Увеличиваем счетчик
-        await setDoc(counterRef, {
-          [counterName]: increment(1),
-          lastUpdated: new Date()
-        }, { merge: true });
-        
-        // Логируем событие в Analytics
-        logEvent(analytics, counterName === 'views' ? 'page_view' : 'download', {
-          file_type: counterName,
-          page_title: document.title
-        });
-      }
-      
-      // Подписываемся на обновления в реальном времени
-      onSnapshot(counterRef, (docSnapshot) => {
-        if (docSnapshot.exists()) {
-          const data = docSnapshot.data();
-          const value = data[counterName] || 0;
-          const element = document.getElementById(elementId);
-          if (element) {
-            element.textContent = formatNumber(value);
-          }
+// Безопасная функция обновления счетчиков
+async function updateFirebaseCounter(counterName, elementId, isIncrement = false) {
+  try {
+    const counterRef = doc(db, 'counters', 'shortcut-doctor');
+    const SECRET_KEY = 'your-super-secure-secret-key-12345'; // Замените на свой ключ
+    
+    if (isIncrement) {
+      // Увеличиваем счетчик с секретным ключом
+      await setDoc(counterRef, {
+        [counterName]: increment(1),
+        lastUpdated: new Date()
+      }, { 
+        merge: true,
+        // Передаем секретный ключ как параметр запроса
+        headers: {
+          'key': SECRET_KEY
         }
       });
       
-    } catch (error) {
-      console.warn('Firebase counter error:', error);
-      fallbackToCountAPI(counterName, elementId, isIncrement);
+      // Логируем событие в Analytics
+      logEvent(analytics, counterName === 'views' ? 'page_view' : 'download', {
+        file_type: counterName,
+        page_title: document.title
+      });
     }
+    
+    // Подписываемся на обновления (чтение разрешено всем)
+    onSnapshot(counterRef, (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        const data = docSnapshot.data();
+        const value = data[counterName] || 0;
+        const element = document.getElementById(elementId);
+        if (element) {
+          element.textContent = formatNumber(value);
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.warn('Firebase counter error:', error);
+    fallbackToCountAPI(counterName, elementId, isIncrement);
   }
+}
 
   // Fallback на countapi.xyz если Firebase недоступен
   async function fallbackToCountAPI(key, elementId, isHit = false) {
