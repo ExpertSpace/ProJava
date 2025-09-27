@@ -225,7 +225,7 @@
                 </div>
                 <div class="download-card exe">
                     <h3>🪟 EXE версия (Windows)</h3>
-                    <a href="ShortcutDoctorUSB.exe" download class="download-btn exe" id="downloadExe">⬇️ Скачать EXE</a>
+                    <a href="ShortcutDoctorUSB-1.0.0.exe" download class="download-btn exe" id="downloadExe">⬇️ Скачать EXE</a>
                     <span class="version">Версия <span id="exeVersion">—</span> | <span id="exeSize">—</span></span>
                     <div class="file-info"><strong>SHA-256:</strong><br><span class="hash-value" id="exeHash">—</span></div>
                 </div>
@@ -268,7 +268,7 @@
         </div>
 
         <div class="footer">
-            <p>© 2024 Shortcut Doctor USB</p>
+            <p>© 2025 Shortcut Doctor USB</p>
             <div class="contacts">
                 <a class="contact-link" href="https://t.me/Minmaxminor" target="_blank">
                     <svg viewBox="0 0 240 240"><path fill="#fff" d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm52.9 80.1l-22 103.5c-1.7 7.5-6.1 9.5-12.4 6.1l-34.4-25.6-16.6 16c-1.8 1.8-3.3 3.3-6.6 3.3l2.4-34.2 62.2-56.2c2.7-2.4-0.6-3.8-4.1-1.4L69.2 127.6 28.5 115.6c-7-2.2-7.1-7-1.5-10.4L171.3 63.9c6.3-2.8 11.6 1.6 9.6 16.2z"/></svg>
@@ -281,8 +281,6 @@
             </div>
         </div>
     </div>
-
-
 
 <script type="module">
   // Firebase импорты
@@ -306,9 +304,6 @@
   const analytics = getAnalytics(app);
   const db = getFirestore(app);
 
-  // Секретный ключ (должен совпадать с правилами Firestore)
-  const SECRET_KEY = 'minmaxminor-9095';
-
   // Функция для форматирования чисел
   function formatNumber(num) {
     if (!num && num !== 0) return '—';
@@ -317,13 +312,13 @@
     return num.toString();
   }
 
-  // Упрощенная функция обновления счетчиков (без ключа в запросе)
+  // Основная функция обновления счетчиков Firebase
   async function updateFirebaseCounter(counterName, elementId, isIncrement = false) {
     try {
       const counterRef = doc(db, 'counters', 'shortcut-doctor');
       
       if (isIncrement) {
-        // Пробуем увеличить счетчик (ключ проверяется правилами Firestore)
+        // Увеличиваем счетчик
         await setDoc(counterRef, {
           [counterName]: increment(1),
           lastUpdated: new Date()
@@ -337,7 +332,7 @@
       }
       
       // Подписываемся на обновления в реальном времени
-      const unsubscribe = onSnapshot(counterRef, (docSnapshot) => {
+      onSnapshot(counterRef, (docSnapshot) => {
         if (docSnapshot.exists()) {
           const data = docSnapshot.data();
           const value = data[counterName] || 0;
@@ -349,59 +344,7 @@
       });
       
     } catch (error) {
-      console.warn('Firebase counter error:', error);
-      // Если ошибка доступа, используем упрощенные правила
-      if (error.code === 'permission-denied') {
-        await useSimpleRules(counterName, elementId, isIncrement);
-      } else {
-        fallbackToCountAPI(counterName, elementId, isIncrement);
-      }
-    }
-  }
-
-  // Альтернатива: упрощенные правила без ключа
-  async function useSimpleRules(counterName, elementId, isIncrement = false) {
-    try {
-      // Временно используем правила без проверки ключа
-      const counterRef = doc(db, 'counters', 'shortcut-doctor');
-      
-      if (isIncrement) {
-        await setDoc(counterRef, {
-          [counterName]: increment(1),
-          lastUpdated: new Date()
-        }, { merge: true });
-      }
-      
-      onSnapshot(counterRef, (docSnapshot) => {
-        if (docSnapshot.exists()) {
-          const data = docSnapshot.data();
-          const value = data[counterName] || 0;
-          const element = document.getElementById(elementId);
-          if (element) element.textContent = formatNumber(value);
-        }
-      });
-    } catch (error) {
-      console.warn('Simple rules also failed:', error);
-      fallbackToCountAPI(counterName, elementId, isIncrement);
-    }
-  }
-
-  // Fallback на countapi.xyz
-  async function fallbackToCountAPI(key, elementId, isHit = false) {
-    try {
-      const endpoint = isHit ? 'hit' : 'get';
-      const url = `https://api.countapi.xyz/${endpoint}/shortcut-doctor-usb/${key}`;
-      
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        const element = document.getElementById(elementId);
-        if (element && data.value !== undefined) {
-          element.textContent = formatNumber(data.value);
-        }
-      }
-    } catch (error) {
-      console.warn('CountAPI failed:', error);
+      console.warn('Firebase error:', error);
       const element = document.getElementById(elementId);
       if (element) element.textContent = '—';
     }
@@ -442,16 +385,17 @@
   async function initializeCounters() {
     await loadHashes();
     
-    // Загружаем текущие значения
+    // Загружаем текущие значения счетчиков
     await updateFirebaseCounter('views', 'viewCount', false);
     await updateFirebaseCounter('jarDownloads', 'downloadJarCount', false);
     await updateFirebaseCounter('exeDownloads', 'downloadExeCount', false);
     
-    // Увеличиваем счетчик просмотров
+    // Увеличиваем счетчик просмотров (один раз за сессию)
     if (!sessionStorage.getItem('viewCounted')) {
       await updateFirebaseCounter('views', 'viewCount', true);
       sessionStorage.setItem('viewCounted', 'true');
       
+      // Логируем просмотр страницы в Analytics
       logEvent(analytics, 'page_view', {
         page_title: document.title,
         page_location: window.location.href
@@ -487,8 +431,6 @@
     setupDownloadHandlers();
   });
 </script>
-
-
 
 </body>
 </html>
