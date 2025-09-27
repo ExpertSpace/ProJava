@@ -5,24 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Shortcut Doctor USB - Восстановление USB накопителей</title>
 
-    <!-- Yandex.Metrika counter -->
-    <script type="text/javascript" >
-        (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-        m[i].l=1*new Date();
-        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
-        (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
-
-        ym(104223851, "init", {
-            clickmap:true,
-            trackLinks:true,
-            accurateTrackBounce:true,
-            webvisor:true
-        });
-    </script>
-    <noscript><div><img src="https://mc.yandex.ru/watch/104223851" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
-    <!-- /Yandex.Metrika counter -->
-
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -295,7 +277,63 @@
         </div>
     </div>
 
+
+    
 <script>
+// Конфигурация счетчиков
+const COUNTER_CONFIG = {
+    namespace: "shortcut-doctor-usb-v2", // Новый namespace чтобы избежать конфликтов
+    keys: {
+        views: "total-views",
+        jarDownloads: "downloads-jar", 
+        exeDownloads: "downloads-exe"
+    }
+};
+
+// Функция для форматирования чисел (1000 -> 1K)
+function formatNumber(num) {
+    if (num >= 1000000) {
+        return (num / 1000000).toFixed(1) + 'M';
+    }
+    if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toString();
+}
+
+// Основная функция работы со счетчиками
+async function updateCounter(key, elementId, isHit = false) {
+    try {
+        const endpoint = isHit ? 'hit' : 'get';
+        const url = `https://api.countapi.xyz/${endpoint}/${COUNTER_CONFIG.namespace}/${key}`;
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data && typeof data.value === 'number') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = formatNumber(data.value);
+            }
+            return data.value;
+        }
+    } catch (error) {
+        console.warn('Counter error:', error);
+        // Показываем прочерк если счетчик недоступен
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = '—';
+        }
+    }
+    return 0;
+}
+
+// Функция для bytesToHuman (оставляем вашу)
 function bytesToHuman(bytes) {
     if (!bytes) return '—';
     const sizes = ['B','KB','MB','GB','TB'];
@@ -303,6 +341,7 @@ function bytesToHuman(bytes) {
     return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 2)} ${sizes[i]}`;
 }
 
+// Функция для загрузки hashes.json (оставляем вашу)
 async function loadHashes() {
     try {
         const resp = await fetch("hashes.json");
@@ -320,48 +359,66 @@ async function loadHashes() {
             document.getElementById("exeHash").textContent = exe.sha256 || "—";
             document.getElementById("exeVersion").textContent = exe.version || "—";
         }
-    } catch(e) { console.error(e); }
-}
-
-const NAMESPACE = "shortcut-doctor-usb";
-async function hitCounter(key, elId) {
-    try {
-        const r = await fetch(`https://api.countapi.xyz/hit/${NAMESPACE}/${key}`);
-        const d = await r.json();
-        document.getElementById(elId).textContent = d.value;
-    } catch {}
-}
-async function getCounter(key, elId) {
-    try {
-        const r = await fetch(`https://api.countapi.xyz/get/${NAMESPACE}/${key}`);
-        const d = await r.json();
-        document.getElementById(elId).textContent = d.value ?? 0;
-    } catch {}
-}
-
-// Отслеживание скачиваний в Яндекс.Метрике
-function trackDownload(type) {
-    if (typeof ym !== 'undefined') {
-        ym(104223851, 'reachGoal', 'DOWNLOAD_' + type.toUpperCase());
+    } catch(e) { 
+        console.error('Error loading hashes:', e); 
     }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    loadHashes();
-    hitCounter("views","viewCount");
-    getCounter("downloads-jar","downloadJarCount");
-    getCounter("downloads-exe","downloadExeCount");
+// Инициализация счетчиков при загрузке страницы
+async function initializeCounters() {
+    // Загружаем информацию о файлах
+    await loadHashes();
     
-    document.getElementById("downloadJar").addEventListener("click", () => {
-        hitCounter("downloads-jar","downloadJarCount");
-        trackDownload('jar');
-    });
-    document.getElementById("downloadExe").addEventListener("click", () => {
-        hitCounter("downloads-exe","downloadExeCount");
-        trackDownload('exe');
-    });
+    // Обновляем счетчики (только чтение)
+    await updateCounter(COUNTER_CONFIG.keys.views, 'viewCount', false);
+    await updateCounter(COUNTER_CONFIG.keys.jarDownloads, 'downloadJarCount', false);
+    await updateCounter(COUNTER_CONFIG.keys.exeDownloads, 'downloadExeCount', false);
+    
+    // Увеличиваем счетчик просмотров (один раз за сессию)
+    if (!sessionStorage.getItem('viewCounted')) {
+        await updateCounter(COUNTER_CONFIG.keys.views, 'viewCount', true);
+        sessionStorage.setItem('viewCounted', 'true');
+    }
+}
+
+// Обработчики для кнопок скачивания
+function setupDownloadHandlers() {
+    const jarLink = document.getElementById('downloadJar');
+    const exeLink = document.getElementById('downloadExe');
+    
+    if (jarLink) {
+        jarLink.addEventListener('click', async function(e) {
+            // Даем время на начало скачивания перед обновлением счетчика
+            setTimeout(async () => {
+                await updateCounter(COUNTER_CONFIG.keys.jarDownloads, 'downloadJarCount', true);
+            }, 100);
+        });
+    }
+    
+    if (exeLink) {
+        exeLink.addEventListener('click', async function(e) {
+            setTimeout(async () => {
+                await updateCounter(COUNTER_CONFIG.keys.exeDownloads, 'downloadExeCount', true);
+            }, 100);
+        });
+    }
+}
+
+// Запуск при полной загрузке DOM
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCounters();
+    setupDownloadHandlers();
 });
+
+// Дополнительно: обновляем счетчики каждые 30 секунд для актуальности
+setInterval(() => {
+    updateCounter(COUNTER_CONFIG.keys.views, 'viewCount', false);
+    updateCounter(COUNTER_CONFIG.keys.jarDownloads, 'downloadJarCount', false);
+    updateCounter(COUNTER_CONFIG.keys.exeDownloads, 'downloadExeCount', false);
+}, 30000);
 </script>
+
+
 
 </body>
 </html>
