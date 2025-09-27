@@ -288,7 +288,7 @@
   // Firebase импорты
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
   import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
-  import { getFirestore, doc, setDoc, increment, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
   // Firebase конфигурация
   const firebaseConfig = {
@@ -306,11 +306,8 @@
   const analytics = getAnalytics(app);
   const db = getFirestore(app);
 
-  // Конфигурация счетчиков
-  const COUNTER_CONFIG = {
-    namespace: "shortcut-doctor-usb",
-    docId: "download-counters"
-  };
+  // Секретный ключ (должен совпадать с правилами Firestore)
+  const SECRET_KEY = 'minmaxminor-9095';
 
   // Функция для форматирования чисел
   function formatNumber(num) {
@@ -320,72 +317,97 @@
     return num.toString();
   }
 
-// Безопасная функция обновления счетчиков
-async function updateFirebaseCounter(counterName, elementId, isIncrement = false) {
-  try {
-    const counterRef = doc(db, 'counters', 'shortcut-doctor');
-    const SECRET_KEY = 'minmaxminor-9095'; // Замените на свой ключ
-    
-    if (isIncrement) {
-      // Увеличиваем счетчик с секретным ключом
-      await setDoc(counterRef, {
-        [counterName]: increment(1),
-        lastUpdated: new Date()
-      }, { 
-        merge: true,
-        // Передаем секретный ключ как параметр запроса
-        headers: {
-          'key': SECRET_KEY
+  // Упрощенная функция обновления счетчиков (без ключа в запросе)
+  async function updateFirebaseCounter(counterName, elementId, isIncrement = false) {
+    try {
+      const counterRef = doc(db, 'counters', 'shortcut-doctor');
+      
+      if (isIncrement) {
+        // Пробуем увеличить счетчик (ключ проверяется правилами Firestore)
+        await setDoc(counterRef, {
+          [counterName]: increment(1),
+          lastUpdated: new Date()
+        }, { merge: true });
+        
+        // Логируем событие в Analytics
+        logEvent(analytics, counterName === 'views' ? 'page_view' : 'download', {
+          file_type: counterName,
+          page_title: document.title
+        });
+      }
+      
+      // Подписываемся на обновления в реальном времени
+      const unsubscribe = onSnapshot(counterRef, (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          const value = data[counterName] || 0;
+          const element = document.getElementById(elementId);
+          if (element) {
+            element.textContent = formatNumber(value);
+          }
         }
       });
       
-      // Логируем событие в Analytics
-      logEvent(analytics, counterName === 'views' ? 'page_view' : 'download', {
-        file_type: counterName,
-        page_title: document.title
-      });
-    }
-    
-    // Подписываемся на обновления (чтение разрешено всем)
-    onSnapshot(counterRef, (docSnapshot) => {
-      if (docSnapshot.exists()) {
-        const data = docSnapshot.data();
-        const value = data[counterName] || 0;
-        const element = document.getElementById(elementId);
-        if (element) {
-          element.textContent = formatNumber(value);
-        }
+    } catch (error) {
+      console.warn('Firebase counter error:', error);
+      // Если ошибка доступа, используем упрощенные правила
+      if (error.code === 'permission-denied') {
+        await useSimpleRules(counterName, elementId, isIncrement);
+      } else {
+        fallbackToCountAPI(counterName, elementId, isIncrement);
       }
-    });
-    
-  } catch (error) {
-    console.warn('Firebase counter error:', error);
-    fallbackToCountAPI(counterName, elementId, isIncrement);
+    }
   }
-}
 
-  // Fallback на countapi.xyz если Firebase недоступен
+  // Альтернатива: упрощенные правила без ключа
+  async function useSimpleRules(counterName, elementId, isIncrement = false) {
+    try {
+      // Временно используем правила без проверки ключа
+      const counterRef = doc(db, 'counters', 'shortcut-doctor');
+      
+      if (isIncrement) {
+        await setDoc(counterRef, {
+          [counterName]: increment(1),
+          lastUpdated: new Date()
+        }, { merge: true });
+      }
+      
+      onSnapshot(counterRef, (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          const value = data[counterName] || 0;
+          const element = document.getElementById(elementId);
+          if (element) element.textContent = formatNumber(value);
+        }
+      });
+    } catch (error) {
+      console.warn('Simple rules also failed:', error);
+      fallbackToCountAPI(counterName, elementId, isIncrement);
+    }
+  }
+
+  // Fallback на countapi.xyz
   async function fallbackToCountAPI(key, elementId, isHit = false) {
     try {
       const endpoint = isHit ? 'hit' : 'get';
-      const url = `https://api.countapi.xyz/${endpoint}/${COUNTER_CONFIG.namespace}/${key}`;
+      const url = `https://api.countapi.xyz/${endpoint}/shortcut-doctor-usb/${key}`;
       
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         const element = document.getElementById(elementId);
-        if (element && data.value) {
+        if (element && data.value !== undefined) {
           element.textContent = formatNumber(data.value);
         }
       }
     } catch (error) {
-      console.warn('CountAPI also failed:', error);
+      console.warn('CountAPI failed:', error);
       const element = document.getElementById(elementId);
       if (element) element.textContent = '—';
     }
   }
 
-  // Функция для bytesToHuman (оставляем вашу)
+  // Функция для bytesToHuman
   function bytesToHuman(bytes) {
     if (!bytes) return '—';
     const sizes = ['B','KB','MB','GB','TB'];
@@ -393,7 +415,7 @@ async function updateFirebaseCounter(counterName, elementId, isIncrement = false
     return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 2)} ${sizes[i]}`;
   }
 
-  // Функция для загрузки hashes.json (оставляем вашу)
+  // Функция для загрузки hashes.json
   async function loadHashes() {
     try {
       const resp = await fetch("hashes.json");
@@ -420,17 +442,16 @@ async function updateFirebaseCounter(counterName, elementId, isIncrement = false
   async function initializeCounters() {
     await loadHashes();
     
-    // Загружаем текущие значения счетчиков
+    // Загружаем текущие значения
     await updateFirebaseCounter('views', 'viewCount', false);
     await updateFirebaseCounter('jarDownloads', 'downloadJarCount', false);
     await updateFirebaseCounter('exeDownloads', 'downloadExeCount', false);
     
-    // Увеличиваем счетчик просмотров (один раз за сессию)
+    // Увеличиваем счетчик просмотров
     if (!sessionStorage.getItem('viewCounted')) {
       await updateFirebaseCounter('views', 'viewCount', true);
       sessionStorage.setItem('viewCounted', 'true');
       
-      // Логируем просмотр страницы в Analytics
       logEvent(analytics, 'page_view', {
         page_title: document.title,
         page_location: window.location.href
@@ -465,7 +486,6 @@ async function updateFirebaseCounter(counterName, elementId, isIncrement = false
     initializeCounters();
     setupDownloadHandlers();
   });
-
 </script>
 
 
